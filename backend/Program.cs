@@ -1,3 +1,5 @@
+using TodoApi;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -21,7 +23,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -32,6 +34,15 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.MapGet("/", () =>
+{
+    var testuser = User.CreateUser("testid", "hogehoge");
+    // Console.WriteLine(testuser);
+    // Console.WriteLine(testuser.Id);
+    // Console.WriteLine(testuser.Name);
+    return "ユーザー情報をコンソールに出力しました";
+});
 
 app.Run();
 

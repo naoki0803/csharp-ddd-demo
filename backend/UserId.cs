@@ -11,4 +11,9 @@ public class UserId
         if (value == null) throw new ArgumentNullException(nameof(value));
         this.value = value;
     }
+
+    public override string ToString()
+    {
+        return value;
+    }
 }

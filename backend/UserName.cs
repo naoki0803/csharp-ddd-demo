@@ -10,4 +10,9 @@ public class UserName
         if (value.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。");
         this.value = value;
     }
+
+    public override string ToString()
+    {
+        return value;
+    }
 }

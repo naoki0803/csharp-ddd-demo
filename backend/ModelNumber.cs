@@ -19,6 +19,11 @@ public class ModelNumber
 
     public ModelNumber(string productCode, string branch, string lot)
     {
+        /*nameof()について
+        変数やパラメータの名前を文字列として取得する：コード内で使用している識別子（変数名、プロパティ名、パラメータ名など）をコンパイル時に文字列に変換します
+        リファクタリングに強い：コード内でパラメータ名を変更した場合、nameof()を使った部分も自動的に更新されます
+        タイプミスを防止：文字列リテラルで名前を指定する代わりにnameof()を使うことで、コンパイル時にタイプミスをチェックできます
+        */
         if (productCode == null) throw new ArgumentNullException(nameof(productCode));
         if (branch == null) throw new ArgumentNullException(nameof(branch));
         if (lot == null) throw new ArgumentNullException(nameof(lot));

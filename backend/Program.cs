@@ -37,10 +37,20 @@ app.MapGet("/weatherforecast", () =>
 
 app.MapGet("/", () =>
 {
-    var testuser = User.CreateUser("testid", "hogehoge");
-    // Console.WriteLine(testuser);
-    // Console.WriteLine(testuser.Id);
-    // Console.WriteLine(testuser.Name);
+    // debug 用にUserをインスタンス化
+    var testuser = User.CreateUser("testid", "クリエイト太郎");
+
+    // ToString()の確認
+    Console.WriteLine(testuser);
+    Console.WriteLine(testuser.Id);
+
+    // エンティティを可変性に対応させる
+    // 変更前の名前を出力
+    Console.WriteLine($"変更前の名前: {testuser.Name}");
+    // 名前を変更
+    testuser.ChangeName("チェンジ太郎");
+    // 変更後の名前を出力
+    Console.WriteLine($"変更後の名前: {testuser.Name}");
     return "ユーザー情報をコンソールに出力しました";
 });
 

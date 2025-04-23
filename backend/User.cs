@@ -19,6 +19,13 @@ public class User
         return user;
     }
 
+    public void ChangeName(string name)
+    {
+        if (name == null) throw new ArgumentNullException(nameof(name));
+        if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。", nameof(name));
+        Name = new UserName(name);
+    }
+
     public override string ToString()
     {
         return $"ID: {Id}, Name: {Name}";

@@ -5,6 +5,63 @@
 -   .NET 7.0
 -   Visual Studio 2022
 
+## ドメイン
+
+### ドメインとは
+
+### ドメイン / ドメインモデル /ドメインオブジェクトの違い
+
+#### ドメイン
+
+ドメインはビジネスの問題領域そのもの
+
+-   ユーザーは一意の ID を持つ必要がある
+-   ユーザー名は 3 文字以上である必要がある
+-   削除済みのユーザーは再度削除できない
+
+#### ドメインモデル
+
+ドメインモデルはドメインの中でも、ビジネスの問題領域を表すもの
+
+```csharp
+// ドメインモデルの例：
+public class User  // ユーザーという概念
+{
+    public UserId Id { get; private set; }  // IDという概念
+    public UserName Name { get; private set; }  // 名前という概念
+    private bool isDeleted;  // 削除状態という概念
+
+    // ユーザー作成という操作の概念
+    public static User CreateUser(string id, string name)
+
+    // 名前変更という操作の概念
+    public void ChangeName(string name)
+
+    // 削除という操作の概念
+    public void Delete()
+}
+```
+
+#### ドメインオブジェクト
+
+ドメインモデルを実際のコードとして実装したもの
+
+```csharp
+// 具体的な実装例：
+public void ChangeName(string name)
+{
+    if (name == null) throw new ArgumentNullException(nameof(name));
+    if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。", nameof(name));
+    Name = new UserName(name);
+}
+
+public void Delete()
+{
+    if (isDeleted) throw new InvalidOperationException("既に削除済みのユーザーです。");
+    isDeleted = true;
+}
+```
+
 ## 値オブジェクト
 
 ### 値オブジェクトとは

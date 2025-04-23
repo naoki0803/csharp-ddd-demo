@@ -8,6 +8,7 @@ public class UserName : IEquatable<UserName>
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
         if (value.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。");
+        // if (value.Length < 6) throw new ArgumentException("ユーザー名は6文字以上です。");   // ドメインルールを3文字以上から6文字以上に変更(変更箇所がここの一箇所だけになる)
         this.value = value;
     }
 

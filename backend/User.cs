@@ -1,6 +1,6 @@
 ﻿namespace TodoApi;
 
-public class User
+public class User : IEquatable<User>
 {
     public UserId Id { get; set; }
     public UserName Name { get; set; }
@@ -29,5 +29,41 @@ public class User
     public override string ToString()
     {
         return $"ID: {Id}, Name: {Name}";
+    }
+
+
+    public bool Equals(User other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id.Equals(other.Id);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((User)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            return Id != null ? Id.GetHashCode() : 0;
+        }
+    }
+
+    public static bool operator ==(User left, User right)
+    {
+        if (ReferenceEquals(left, null))
+            return ReferenceEquals(right, null);
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(User left, User right)
+    {
+        return !(left == right);
     }
 }

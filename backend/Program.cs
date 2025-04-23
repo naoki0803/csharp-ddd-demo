@@ -54,6 +54,31 @@ app.MapGet("/", () =>
     return "ユーザー情報をコンソールに出力しました";
 });
 
+
+app.MapGet("/valueobject", () =>
+{
+    // 値オブジェクトはインスタンスが異なっても、同じ値を持つ場合は等価とみなされる。
+    var user1 = new UserName("クリエイト太郎");
+    var user2 = new UserName("クリエイト太郎");
+
+    // 等価性による比較
+    Console.WriteLine(user1.Equals(user2)); // true
+
+    // 演算子による比較
+    Console.WriteLine(user1 == user2); // true
+
+
+    var user3 = User.CreateUser("1", "鈴木一郎");
+    var user4 = User.CreateUser("2", "鈴木一郎");
+
+    // 同一性による比較
+    Console.WriteLine($"falseになる？→ {user3.Equals(user4)}"); // false
+
+
+    return "valueobjectのパスです。";
+});
+
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

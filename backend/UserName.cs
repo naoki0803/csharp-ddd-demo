@@ -1,6 +1,6 @@
 ﻿namespace TodoApi;
 
-public class UserName
+public class UserName : IEquatable<UserName>
 {
     private readonly string value;
 
@@ -16,18 +16,27 @@ public class UserName
         return value;
     }
 
+    public bool Equals(UserName other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return string.Equals(value, other.value);
+    }
+
     public override bool Equals(object obj)
     {
-        if (obj is UserName other)
-        {
-            return this.value == other.value;
-        }
-        return false;
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((UserName)obj);
     }
 
     public override int GetHashCode()
     {
-        return value.GetHashCode();
+        unchecked
+        {
+            return value != null ? value.GetHashCode() : 0;
+        }
     }
 
     public static bool operator ==(UserName left, UserName right)

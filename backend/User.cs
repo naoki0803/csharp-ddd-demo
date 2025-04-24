@@ -17,6 +17,7 @@ public class User : IEquatable<User>
         var user = new User();
         // user.Id = name; // 値オブジェクトを採用していない場合、引数のnameをプロパティに設定できてしまう。
         user.Id = new UserId(Guid.NewGuid().ToString()); // 値オブジェクトを採用している場合、引数のnameをUserid型に変換して設定する。
+        // user.Id = new UserId("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2"); // 重複チェックの為一時的にハードコーディング
         user.Name = new UserName(name);
 
         return user;

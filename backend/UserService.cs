@@ -1,13 +1,38 @@
+using Supabase;
+using Supabase.Postgrest;
+using System.Collections.Generic;
+
 namespace TodoApi;
 
 public class UserService
 {
-    // ユーザー重複チェックのドメインサービス
-    public bool Exists(User user)
+    private readonly Supabase.Client _supabase;
+
+    public UserService(Supabase.Client supabase)
     {
-        // 重複確認のコード
-        // 今は記述していないが、本来はリポジトリを参照してuserの存在を確認する。
-        return user.Id != user.Id;
+        _supabase = supabase;
+    }
+
+    // ユーザー重複チェックのドメインサービス
+    public async Task<bool> Exists(User user)
+    {
+        try
+        {
+            var response = await _supabase
+                .From<UserModel>()
+                .Select("id")
+                .Match(new Dictionary<string, string> { { "id", user.Id.ToString() } })
+                .Get();
+
+            // レスポンスのデータが存在するかどうかで重複を判定
+            return response.Models.Any();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"重複チェック時にエラーが発生: {ex.Message}");
+            // エラーの場合は重複していないとみなす
+            return false;
+        }
     }
 
     // ドメインサービスにエンティティのすべてのロジックを記述することは技術的には可能ですが、

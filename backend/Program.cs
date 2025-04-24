@@ -142,25 +142,37 @@ app.MapGet("/entity", () =>
 
 app.MapGet("/domainservice", async () =>
 {
+    Console.WriteLine("domainserviceのパスに接続されました。");
+
     // domainService を用いた重複チェックの実装
-    var user1 = User.CreateUser("鈴木一郎");
+    var user = User.CreateUser("鈴木一郎");
     var userService = new UserService(supabase);
-    bool result = await userService.Exists(user1);
+    bool result = await userService.Exists(user);
     if (result)
     {
-        throw new Exception($"{user1.Name}は重複しています。");
+        throw new Exception($"{user.Name}は重複しています。");
     }
-    Console.WriteLine("データストア(リポジトリ)への問い合わせ実施後、データが永続化される。");
 
-    return "domainserviceのパスです。";
+    // ドメインモデルからデータモデルへの変換
+    var userModel = new UserModel
+    {
+        Id = user.Id.ToString(),  // UserIdをそのまま使用
+        Name = user.Name.ToString()  // UserNameをそのまま使用
+    };
+
+    // Supabaseにデータを保存
+    var response = await supabase.From<UserModel>().Insert(userModel);
+    Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+
+    return Results.Ok(new
+    {
+        message = "ユーザーの保存に成功しました",
+        user_id = user.Id.ToString(),
+        user_name = user.Name.ToString()
+    });
 });
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
 
 // Supabaseからデータを取得するためのデータモデル
 namespace TodoApi

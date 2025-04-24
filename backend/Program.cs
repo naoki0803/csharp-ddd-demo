@@ -89,6 +89,21 @@ app.MapGet("/entity", () =>
     return "entityのパスです。";
 });
 
+app.MapGet("/domainservice", () =>
+{
+    // domainService を用いた重複チェックの実装
+    var user1 = User.CreateUser("鈴木一郎");
+
+    var userService = new UserService();
+    bool result = userService.Exists(user1);
+    if (result)
+    {
+        throw new Exception($"{user1.Name}は重複しています。");
+    }
+    Console.WriteLine("データストア(リポジトリ)への問い合わせ実施後、データが永続化される。");
+
+    return "domainserviceのパスです。";
+});
 
 app.Run();
 

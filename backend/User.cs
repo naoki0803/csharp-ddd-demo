@@ -1,4 +1,4 @@
-namespace TodoApi;
+﻿namespace TodoApi;
 
 public class User : IEquatable<User>
 {
@@ -28,6 +28,14 @@ public class User : IEquatable<User>
         if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。", nameof(name));
         Name = new UserName(name);
     }
+
+    // User クラスに重複確認の定義することは不自然な為コメントアウト ※UserService.csで実装指定いる
+    // Userエンティティは自分自身の情報（ID、名前、削除状態など）は知っているが、他のUserの存在は知らない為、重複確認はUserエンティティの責務ではない。
+    // public bool Exists(User user)
+    // {
+    //     return true;
+    //     // 重複確認のコード
+    // }
 
     public override string ToString()
     {

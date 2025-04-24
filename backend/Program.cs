@@ -2,8 +2,14 @@ using TodoApi;
 using Supabase;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
+using Supabase;
+using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 開発環境のローカル設定ファイルを追加
+builder.Configuration.AddJsonFile("appsettings.Development.local.json", optional: true, reloadOnChange: true);
 
 // 開発環境のローカル設定ファイルを追加
 builder.Configuration.AddJsonFile("appsettings.Development.local.json", optional: true, reloadOnChange: true);
@@ -35,6 +41,19 @@ await supabase.InitializeAsync();
 
 // Supabaseからusersテーブルの一覧を取得するエンドポイント
 app.MapGet("/api/users", async () =>
+// 設定ファイルからSupabase情報を読み込む
+var supabaseConfig = builder.Configuration.GetSection("Supabase");
+var url = supabaseConfig["Url"];
+var key = supabaseConfig["Key"];
+var options = new Supabase.SupabaseOptions
+{
+    AutoConnectRealtime = true
+};
+var supabase = new Supabase.Client(url, key, options);
+await supabase.InitializeAsync();
+
+// Supabaseからusersテーブルの一覧を取得するエンドポイント
+app.MapGet("/api/users", async () =>
 {
     try
     {
@@ -53,6 +72,57 @@ app.MapGet("/api/users", async () =>
         Console.WriteLine($"エラー発生: {ex.Message}");
         return Results.Problem($"Supabaseからのデータ取得に失敗しました: {ex.Message}");
     }
+});
+
+// Supabaseにユーザーを追加するエンドポイント
+app.MapGet("/api/users/insert", async () =>
+{
+    try
+    {
+        // Userエンティティを作成（ドメインモデル）
+        var user = User.CreateUser("test次郎");
+
+        // ドメインモデルからデータモデルへの変換
+        var userModel = new UserModel
+        {
+            Id = user.Id.ToString(),  // UserIdをそのまま使用
+            Name = user.Name.ToString()  // UserNameをそのまま使用
+        };
+
+        // Supabaseにデータを保存
+        var response = await supabase.From<UserModel>().Insert(userModel);
+        Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+
+        return Results.Ok(new
+        {
+            message = "ユーザーの保存に成功しました",
+            user_id = user.Id.ToString(),
+            user_name = user.Name.ToString()
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"エラー発生: {ex.Message}");
+        return Results.Problem($"Supabaseへのデータ保存に失敗しました: {ex.Message}");
+    }
+});
+try
+{
+    var result = await supabase.From<UserModel>().Get();
+    // 取得したデータを単純な形式に変換
+    var users = result.Models.Select(u => new
+    {
+        Id = u.Id,
+        Name = u.Name
+    }).ToList();
+
+    return Results.Ok(users);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"エラー発生: {ex.Message}");
+    return Results.Problem($"Supabaseからのデータ取得に失敗しました: {ex.Message}");
+}
 });
 
 // Supabaseにユーザーを追加するエンドポイント
@@ -169,6 +239,19 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
 
+// Supabaseからデータを取得するためのデータモデル
+namespace TodoApi
+{
+    [Table("users")]
+    public class UserModel : BaseModel
+    {
+        [PrimaryKey("id")]
+        public string Id { get; set; }
+
+        [Column("name")]
+        public string Name { get; set; }
+    }
+}
 // Supabaseからデータを取得するためのデータモデル
 namespace TodoApi
 {

@@ -38,7 +38,7 @@ app.MapGet("/weatherforecast", () =>
 app.MapGet("/", () =>
 {
     // debug 用にUserをインスタンス化
-    var testuser = User.CreateUser("testid", "クリエイト太郎");
+    var testuser = User.CreateUser("クリエイト太郎");
 
     // ToString()の確認
     Console.WriteLine(testuser);
@@ -74,9 +74,9 @@ app.MapGet("/valueobject", () =>
 app.MapGet("/entity", () =>
 {
     // エンティティは同一性によって識別される。
-    var user1 = User.CreateUser("1", "鈴木一郎");
-    var user2 = User.CreateUser("2", "鈴木一郎");
-    var user3 = User.CreateUser("1", "小林一郎");
+    var user1 = User.CreateUser("鈴木一郎");
+    var user2 = User.CreateUser("鈴木一郎");
+    var user3 = User.CreateUser("小林一郎");
 
     // Equalsメソッドによる同一性比較
     Console.WriteLine(user1.Equals(user2)); // IDが異なる為、false

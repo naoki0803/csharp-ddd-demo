@@ -1,16 +1,17 @@
-using Supabase;
-using Supabase.Postgrest;
-using System.Collections.Generic;
-
 namespace TodoApi;
+
+using System.Threading.Tasks;
+using TodoApi.Infrastructure.Repository;
 
 public class UserService
 {
-    private readonly Supabase.Client _supabase;
 
-    public UserService(Supabase.Client supabase)
+
+    private readonly IUserRepository _userRepository;
+
+    public UserService(IUserRepository userRepository)
     {
-        _supabase = supabase;
+        _userRepository = userRepository;
     }
 
     // ユーザー重複チェックのドメインサービス
@@ -18,14 +19,8 @@ public class UserService
     {
         try
         {
-            var response = await _supabase
-                .From<UserModel>()
-                .Select("id")
-                .Match(new Dictionary<string, string> { { "id", user.Id.ToString() } })
-                .Get();
-
-            // レスポンスのデータが存在するかどうかで重複を判定
-            return response.Models.Any();
+            var found = await _userRepository.Find(user.Name);
+            return found != null;
         }
         catch (Exception ex)
         {

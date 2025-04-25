@@ -7,7 +7,27 @@ var builder = WebApplication.CreateBuilder(args);
 // 開発環境のローカル設定ファイルを追加
 builder.Configuration.AddJsonFile("appsettings.Development.local.json", optional: true, reloadOnChange: true);
 
-// Supabaseクライアントの登録
+// Supabaseクライアントの登録 (シングルトンで登録)
+/*
+    // 悪い例（シングルトンでない場合）
+    app.MapGet("/api/data", () => {
+        var client = new Supabase.Client(...); // 毎回新しい接続
+        client.InitializeAsync().Wait();       // 毎回初期化
+        var result = client.From(...).Get();   // 新しい接続で実行
+        client.Dispose();                      // 接続を閉じる
+    });
+
+    // 良い例（シングルトンの場合）
+    app.MapGet("/api/data", (Supabase.Client client) => {
+        var result = client.From(...).Get();   // 既存の接続を再利用
+    });
+    シングルトンを使用しない場合、各リクエストで新しい接続を確立する必要があり、これは：
+    パフォーマンスの低下
+    リソースの無駄遣い
+    接続数の制御が困難
+    一貫性の保証が難しい
+    といった問題を引き起こす可能性があります。
+*/
 builder.Services.AddSingleton<Supabase.Client>(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -23,10 +43,10 @@ builder.Services.AddSingleton<Supabase.Client>(sp =>
     return client;
 });
 
-// UserRepositoryの登録
+// UserRepositoryの登録（リクエストスコープでIUserRepositoryの実装としてUserRepositoryを提供）
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-// UserServiceの登録
+// UserServiceの登録（リクエストスコープでUserServiceを提供。コンストラクタでIUserRepositoryが自動注入される）
 builder.Services.AddScoped<UserService>();
 
 // Add services to the container.
@@ -40,61 +60,6 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-// // Supabaseからusersテーブルの一覧を取得するエンドポイント
-// app.MapGet("/api/users", async () =>
-// {
-//     try
-//     {
-//         var result = await supabase.From<UserModel>().Get();
-//         // 取得したデータを単純な形式に変換
-//         var users = result.Models.Select(u => new
-//         {
-//             Id = u.Id,
-//             Name = u.Name
-//         }).ToList();
-
-//         return Results.Ok(users);
-//     }
-//     catch (Exception ex)
-//     {
-//         Console.WriteLine($"エラー発生: {ex.Message}");
-//         return Results.Problem($"Supabaseからのデータ取得に失敗しました: {ex.Message}");
-//     }
-// });
-
-// // Supabaseにユーザーを追加するエンドポイント
-// app.MapGet("/api/users/insert", async () =>
-// {
-//     try
-//     {
-//         // Userエンティティを作成（ドメインモデル）
-//         var user = User.CreateUser("test次郎");
-
-//         // ドメインモデルからデータモデルへの変換
-//         var userModel = new UserModel
-//         {
-//             Id = user.Id.ToString(),  // UserIdをそのまま使用
-//             Name = user.Name.ToString()  // UserNameをそのまま使用
-//         };
-
-//         // Supabaseにデータを保存
-//         var response = await supabase.From<UserModel>().Insert(userModel);
-//         Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
-
-//         return Results.Ok(new
-//         {
-//             message = "ユーザーの保存に成功しました",
-//             user_id = user.Id.ToString(),
-//             user_name = user.Name.ToString()
-//         });
-//     }
-//     catch (Exception ex)
-//     {
-//         Console.WriteLine($"エラー発生: {ex.Message}");
-//         return Results.Problem($"Supabaseへのデータ保存に失敗しました: {ex.Message}");
-//     }
-// });
 
 app.MapGet("/", () =>
 {
@@ -181,7 +146,7 @@ app.MapGet("/domainservice", async () =>
 });
 
 
-
+//引数にIUserRepositoryを渡す事で、UserRepositoryのインスタンスを注入する。
 app.MapGet("/repository", async (IUserRepository userRepository) =>
 {
     Console.WriteLine("repositoryのパスに接続されました。");

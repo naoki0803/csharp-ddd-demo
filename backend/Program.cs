@@ -1,12 +1,33 @@
 using TodoApi;
-using Supabase;
-using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
+using TodoApi.Infrastructure.Repository;
+using TodoApi.Infrastructure.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 開発環境のローカル設定ファイルを追加
 builder.Configuration.AddJsonFile("appsettings.Development.local.json", optional: true, reloadOnChange: true);
+
+// Supabaseクライアントの登録
+builder.Services.AddSingleton<Supabase.Client>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var supabaseConfig = configuration.GetSection("Supabase");
+    var url = supabaseConfig["Url"];
+    var key = supabaseConfig["Key"];
+    var options = new Supabase.SupabaseOptions
+    {
+        AutoConnectRealtime = true
+    };
+    var client = new Supabase.Client(url, key, options);
+    client.InitializeAsync().Wait();
+    return client;
+});
+
+// UserRepositoryの登録
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// UserServiceの登録
+builder.Services.AddScoped<UserService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -20,73 +41,60 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// // Supabaseからusersテーブルの一覧を取得するエンドポイント
+// app.MapGet("/api/users", async () =>
+// {
+//     try
+//     {
+//         var result = await supabase.From<UserModel>().Get();
+//         // 取得したデータを単純な形式に変換
+//         var users = result.Models.Select(u => new
+//         {
+//             Id = u.Id,
+//             Name = u.Name
+//         }).ToList();
 
-// 設定ファイルからSupabase情報を読み込む
-var supabaseConfig = builder.Configuration.GetSection("Supabase");
-var url = supabaseConfig["Url"];
-var key = supabaseConfig["Key"];
-var options = new Supabase.SupabaseOptions
-{
-    AutoConnectRealtime = true
-};
-var supabase = new Supabase.Client(url, key, options);
-await supabase.InitializeAsync();
+//         return Results.Ok(users);
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"エラー発生: {ex.Message}");
+//         return Results.Problem($"Supabaseからのデータ取得に失敗しました: {ex.Message}");
+//     }
+// });
 
-// Supabaseからusersテーブルの一覧を取得するエンドポイント
-app.MapGet("/api/users", async () =>
-{
-    try
-    {
-        var result = await supabase.From<UserModel>().Get();
-        // 取得したデータを単純な形式に変換
-        var users = result.Models.Select(u => new
-        {
-            Id = u.Id,
-            Name = u.Name
-        }).ToList();
+// // Supabaseにユーザーを追加するエンドポイント
+// app.MapGet("/api/users/insert", async () =>
+// {
+//     try
+//     {
+//         // Userエンティティを作成（ドメインモデル）
+//         var user = User.CreateUser("test次郎");
 
-        return Results.Ok(users);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"エラー発生: {ex.Message}");
-        return Results.Problem($"Supabaseからのデータ取得に失敗しました: {ex.Message}");
-    }
-});
+//         // ドメインモデルからデータモデルへの変換
+//         var userModel = new UserModel
+//         {
+//             Id = user.Id.ToString(),  // UserIdをそのまま使用
+//             Name = user.Name.ToString()  // UserNameをそのまま使用
+//         };
 
-// Supabaseにユーザーを追加するエンドポイント
-app.MapGet("/api/users/insert", async () =>
-{
-    try
-    {
-        // Userエンティティを作成（ドメインモデル）
-        var user = User.CreateUser("test次郎");
+//         // Supabaseにデータを保存
+//         var response = await supabase.From<UserModel>().Insert(userModel);
+//         Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
 
-        // ドメインモデルからデータモデルへの変換
-        var userModel = new UserModel
-        {
-            Id = user.Id.ToString(),  // UserIdをそのまま使用
-            Name = user.Name.ToString()  // UserNameをそのまま使用
-        };
-
-        // Supabaseにデータを保存
-        var response = await supabase.From<UserModel>().Insert(userModel);
-        Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
-
-        return Results.Ok(new
-        {
-            message = "ユーザーの保存に成功しました",
-            user_id = user.Id.ToString(),
-            user_name = user.Name.ToString()
-        });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"エラー発生: {ex.Message}");
-        return Results.Problem($"Supabaseへのデータ保存に失敗しました: {ex.Message}");
-    }
-});
+//         return Results.Ok(new
+//         {
+//             message = "ユーザーの保存に成功しました",
+//             user_id = user.Id.ToString(),
+//             user_name = user.Name.ToString()
+//         });
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"エラー発生: {ex.Message}");
+//         return Results.Problem($"Supabaseへのデータ保存に失敗しました: {ex.Message}");
+//     }
+// });
 
 app.MapGet("/", () =>
 {
@@ -142,27 +150,56 @@ app.MapGet("/entity", () =>
 
 app.MapGet("/domainservice", async () =>
 {
-    Console.WriteLine("domainserviceのパスに接続されました。");
+    // Console.WriteLine("domainserviceのパスに接続されました。");
+
+    // // domainService を用いた重複チェックの実装
+    // var user = User.CreateUser("鈴木一郎");
+    // var userService = new UserService(supabase);
+    // bool result = await userService.Exists(user);
+    // if (result)
+    // {
+    //     throw new Exception($"{user.Name}は重複しています。");
+    // }
+
+    // // ドメインモデルからデータモデルへの変換
+    // var userModel = new UserModel
+    // {
+    //     Id = user.Id.ToString(),  // UserIdをそのまま使用
+    //     Name = user.Name.ToString()  // UserNameをそのまま使用
+    // };
+
+    // // Supabaseにデータを保存
+    // var response = await supabase.From<UserModel>().Insert(userModel);
+    // Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+
+    // return Results.Ok(new
+    // {
+    //     message = "ユーザーの保存に成功しました",
+    //     user_id = user.Id.ToString(),
+    //     user_name = user.Name.ToString()
+    // });
+});
+
+
+
+app.MapGet("/repository", async (IUserRepository userRepository) =>
+{
+    Console.WriteLine("repositoryのパスに接続されました。");
 
     // domainService を用いた重複チェックの実装
     var user = User.CreateUser("鈴木一郎");
-    var userService = new UserService(supabase);
-    bool result = await userService.Exists(user);
+    var userService = new UserService(userRepository);
+    var result = await userService.Exists(user);
     if (result)
     {
         throw new Exception($"{user.Name}は重複しています。");
     }
 
-    // ドメインモデルからデータモデルへの変換
-    var userModel = new UserModel
-    {
-        Id = user.Id.ToString(),  // UserIdをそのまま使用
-        Name = user.Name.ToString()  // UserNameをそのまま使用
-    };
 
-    // Supabaseにデータを保存
-    var response = await supabase.From<UserModel>().Insert(userModel);
-    Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+
+    // // Supabaseにデータを保存
+    // var response = await userRepository.From<UserModel>().Insert(userModel);
+    // Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
 
     return Results.Ok(new
     {
@@ -173,17 +210,3 @@ app.MapGet("/domainservice", async () =>
 });
 
 app.Run();
-
-// Supabaseからデータを取得するためのデータモデル
-namespace TodoApi
-{
-    [Table("users")]
-    public class UserModel : BaseModel
-    {
-        [PrimaryKey("id")]
-        public string Id { get; set; }
-
-        [Column("name")]
-        public string Name { get; set; }
-    }
-}

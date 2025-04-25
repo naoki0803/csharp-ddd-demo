@@ -5,8 +5,6 @@ using TodoApi.Infrastructure.Repository;
 
 public class UserService
 {
-
-
     private readonly IUserRepository _userRepository;
 
     public UserService(IUserRepository userRepository)

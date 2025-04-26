@@ -117,16 +117,18 @@ app.MapGet("/domainservice", async () =>
 {
     // Console.WriteLine("domainserviceのパスに接続されました。");
 
-    // // domainService を用いた重複チェックの実装
     // var user = User.CreateUser("鈴木一郎");
     // var userService = new UserService(supabase);
+
+    // // domainService を用いた重複チェックの実装
     // bool result = await userService.Exists(user);
     // if (result)
     // {
     //     throw new Exception($"{user.Name}は重複しています。");
     // }
 
-    // // ドメインモデルからデータモデルへの変換
+    // // userRepository を用いらないユーザーの保存
+    // // データモデルへの変換
     // var userModel = new UserModel
     // {
     //     Id = user.Id.ToString(),  // UserIdをそのまま使用
@@ -151,15 +153,19 @@ app.MapGet("/repository", async (IUserRepository userRepository) =>
 {
     Console.WriteLine("repositoryのパスに接続されました。");
 
-    // domainService を用いた重複チェックの実装
-    var user = User.CreateUser("リポジトリ次郎");
     var userService = new UserService(userRepository);
+    var user = User.CreateUser("リポジトリ次郎");
+
+    // domainService を用いた重複チェックの実装
     var result = await userService.Exists(user);
     if (result)
     {
         throw new Exception($"{user.Name}は重複しています。");
     }
+
+    // userRepository を用いたユーザーの保存
     await userRepository.Save(user);
+
     return Results.Ok(new
     {
         message = "ユーザーの保存に成功しました",

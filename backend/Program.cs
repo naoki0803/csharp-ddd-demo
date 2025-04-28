@@ -226,7 +226,38 @@ app.MapGet("/application/get", async (IUserRepository userRepository) =>
     });
 });
 
+// コマンドオブジェクトを用いたユーザーの更新
+app.MapGet("/application/command", async (IUserRepository userRepository) =>
+{
+    Console.WriteLine("application/commandのパスに接続されました。");
 
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+
+    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
+
+    if (userData == null)
+    {
+        return Results.BadRequest(new
+        {
+            message = "該当するユーザーが見つかりませんでした"
+        });
+    }
+
+    var command = new UserUpdateCommand(userData.Id)
+    {
+        Name = "コマンドオブジェクト次郎アップサート3",
+        Email = "command3@example.com"
+    };
+    var updatedUserData = await userApplicationService.Update(command);
+
+    return Results.Ok(new
+    {
+        message = "ユーザーの更新に成功しました",
+        user_id = updatedUserData.Id,
+        user_name = updatedUserData.Name
+    });
+});
 
 
 app.Run();

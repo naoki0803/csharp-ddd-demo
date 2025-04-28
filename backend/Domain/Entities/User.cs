@@ -39,6 +39,11 @@ public class User : IEquatable<User>
         Name = new UserName(name);
     }
 
+    public void ChangeMailAddress(string mailAddress)
+    {
+        // メールアドレスの更新 (未実装)
+    }
+
     // User クラスに重複確認の定義することは不自然な為コメントアウト ※UserService.csで実装指定いる
     // Userエンティティは自分自身の情報（ID、名前、削除状態など）は知っているが、他のUserの存在は知らない為、重複確認はUserエンティティの責務ではない。
     // public bool Exists(User user)

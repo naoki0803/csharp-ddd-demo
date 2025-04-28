@@ -45,20 +45,33 @@ public class UserApplicationService
         return userData;
     }
 
-    public async Task<UserData?> Update(string id, string name)
+    public async Task<UserData?> Update(string id, string name = null, string email = null)
     {
         var targetId = new UserId(id);
         var user = await _userRepository.Find(targetId);
         if (user == null)
         {
+            // throw new Exception("ユーザーが見つかりません。");
             return null;
         }
+        var newUser = User.CreateUser(name);
 
-        user.ChangeName(name);
-        if (await _userService.Exists(user))
+        // 名前の更新
+        if (name != null)
         {
-            throw new Exception("ユーザーが既に存在します。");
+            if (await _userService.Exists(newUser))
+            {
+                throw new Exception("ユーザーが既に存在します。");
+            }
+            user.ChangeName(name);
         }
+
+        // メールアドレスの更新 (今後もUpdateの引数が増えるたびに、内部の処理(シグネチャー)を変更する必要が出てきてしまう。)
+        if (email != null)
+        {
+            user.ChangeMailAddress(email);
+        }
+
         await _userRepository.Save(user);
 
         var userData = new UserData(user);

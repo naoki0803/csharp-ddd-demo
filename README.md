@@ -299,3 +299,86 @@ public class UserApplicationService
 
 -   リポジトリは「ドメインオブジェクトの永続化・取得」を担う役割であり、DDD のレイヤー分離を実現する重要なパターンです。
 -   このプロジェクトでは、インターフェースと実装を分離し、DI（依存性注入）を活用することで、柔軟かつテストしやすい設計となっています。
+
+## アプリケーションサービス
+
+### アプリケーションサービスとは
+
+アプリケーションサービスは、ユースケース単位でアプリケーションの振る舞いをまとめる層です。ドメイン層のビジネスロジックを組み合わせて、外部（API や UI など）からの要求に応じた処理を実現します。DDD においては、アプリケーションサービスがドメインモデルの操作を調整し、トランザクション管理や DTO 変換なども担います。
+
+-   ドメイン層のエンティティやドメインサービスを利用して、ユースケース（例：ユーザー登録、取得など）を実装します。
+-   アプリケーションサービス自体にはビジネスロジックを極力持たず、主に「調整役」として振る舞います。
+-   外部インターフェース（API コントローラー等）から直接呼び出されることが多いです。
+
+### このプロジェクトでの実装例
+
+#### サービス定義
+
+```csharp
+// backend/Applications/Services/UserApplicationService.cs
+public class UserApplicationService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly UserService _userService;
+    public UserApplicationService(IUserRepository userRepository, UserService userService)
+    {
+        _userRepository = userRepository;
+        _userService = userService;
+    }
+
+    // ユーザー登録ユースケース
+    public async Task<UserData?> Register(string name)
+    {
+        var user = User.CreateUser(name);
+        if (await _userService.Exists(user))
+            throw new Exception("ユーザーが既に存在します。");
+        await _userRepository.Save(user);
+        return new UserData(user);
+    }
+    public async Task<UserData?> Get(string id)
+    {
+        var targetId = new UserId(id);
+        var user = await _userRepository.Find(targetId);
+        if (user == null) return null;
+        return new UserData(user);
+    }
+}
+```
+
+-   `IUserRepository`や`UserService`はコンストラクタインジェクションで渡され、テスト容易性・疎結合を実現しています。
+-   ドメイン層の知識（エンティティ生成(User.CreateUser)、ビジネスルール判定(\_userService.Exists)）はアプリケーションサービスから呼び出され、
+    アプリケーションサービス自体は「調整役」に徹しています。
+-   DTO 変換により、ドメインオブジェクトの内部構造を外部に漏らさない設計です。
+
+#### 利用例（Program.cs）
+
+```csharp
+// backend/Program.cs
+app.MapGet("/application/register", async (IUserRepository userRepository) =>
+{
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userData = await userApplicationService.Register("アプリケーション次郎");
+    if (userData == null)
+        return Results.BadRequest(new { message = "ユーザーの保存に失敗しました" });
+    return Results.Ok(new { message = "ユーザーの保存に成功しました", user_id = userData.Id, user_name = userData.Name });
+});
+
+app.MapGet("/application/get", async (IUserRepository userRepository) =>
+{
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
+    if (userData == null)
+        return Results.BadRequest(new { message = "該当するユーザーが見つかりませんでした" });
+    return Results.Ok(new { message = "ユーザーの取得に成功しました", user_id = userData.Id, user_name = userData.Name });
+});
+```
+
+-   API 層（エンドポイント）はアプリケーションサービスのみを呼び出し、ドメイン層やインフラ層の詳細には依存しません。
+-   ユースケースごとにアプリケーションサービスのメソッドを呼び出し、結果を DTO として返却することで、責務分離と拡張性を担保しています。
+
+### まとめ
+
+-   アプリケーションサービスは「ユースケースの調整役」として、ドメイン層のロジックを組み合わせて外部要求に応じた処理を実現します。
+-   このプロジェクトでは、リポジトリやドメインサービスを注入し、DTO 変換や例外処理も担うことで、API 層との橋渡しを担っています。

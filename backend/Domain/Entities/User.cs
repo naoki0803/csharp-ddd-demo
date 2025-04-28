@@ -2,8 +2,8 @@
 
 public class User : IEquatable<User>
 {
-    public UserId Id { get; private set; }
-    public UserName Name { get; private set; }
+    public UserId Id { get; private set; } = null!;
+    public UserName Name { get; private set; } = null!;
 
     // コンストラクタをprivateにして、インスタンスを生成することを禁止する。
     // ファクトリ関数で CreateUser を呼び出す。
@@ -14,6 +14,7 @@ public class User : IEquatable<User>
     // public string Id { get; set; }
     public static User CreateUser(string name)
     {
+        ArgumentNullException.ThrowIfNull(name);
         var user = new User();
         // user.Id = name; // 値オブジェクトを採用していない場合、引数のnameをプロパティに設定できてしまう。
         user.Id = new UserId(Guid.NewGuid().ToString()); // 値オブジェクトを採用している場合、引数のnameをUserid型に変換して設定する。
@@ -58,14 +59,14 @@ public class User : IEquatable<User>
     }
 
 
-    public bool Equals(User other)
+    public bool Equals(User? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return Id.Equals(other.Id);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
@@ -77,7 +78,7 @@ public class User : IEquatable<User>
     {
         unchecked
         {
-            return Id != null ? Id.GetHashCode() : 0;
+            return Id.GetHashCode();
         }
     }
 

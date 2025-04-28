@@ -46,7 +46,8 @@ public class UserRepository : IUserRepository
             Console.WriteLine($"検索結果: {response?.Models?.Count ?? 0} 件");
 
             var result = response?.Models?.FirstOrDefault();
-            if (result == null) return null;
+            // if (result== null) return null;
+            if (result?.Id == null || result.Name == null) return null;
             return User.Reconstruct(result.Id, result.Name);
         }
         catch (Exception ex)

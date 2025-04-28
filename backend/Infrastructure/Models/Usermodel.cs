@@ -7,9 +7,9 @@ namespace TodoApi.Infrastructure.Models
     public class UserModel : BaseModel
     {
         [PrimaryKey("id")]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [Column("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 }

@@ -32,8 +32,8 @@ builder.Services.AddSingleton<Supabase.Client>(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var supabaseConfig = configuration.GetSection("Supabase");
-    var url = supabaseConfig["Url"];
-    var key = supabaseConfig["Key"];
+    var url = supabaseConfig["Url"] ?? throw new ArgumentNullException("Url", "Supabase URL is not configured");
+    var key = supabaseConfig["Key"] ?? throw new ArgumentNullException("Key", "Supabase Key is not configured");
     var options = new Supabase.SupabaseOptions
     {
         AutoConnectRealtime = true
@@ -113,39 +113,40 @@ app.MapGet("/entity", () =>
     return "entityのパスです。";
 });
 
-app.MapGet("/domainservice", async () =>
-{
-    // Console.WriteLine("domainserviceのパスに接続されました。");
 
-    // var user = User.CreateUser("鈴木一郎");
-    // var userService = new UserService(supabase);
+// app.MapGet("/domainservice", async () =>
+// {
+//     Console.WriteLine("domainserviceのパスに接続されました。");
 
-    // // domainService を用いた重複チェックの実装
-    // bool result = await userService.Exists(user);
-    // if (result)
-    // {
-    //     throw new Exception($"{user.Name}は重複しています。");
-    // }
+//     var user = User.CreateUser("鈴木一郎");
+//     var userService = new UserService(supabase);
 
-    // // userRepository を用いらないユーザーの保存
-    // // データモデルへの変換
-    // var userModel = new UserModel
-    // {
-    //     Id = user.Id.ToString(),  // UserIdをそのまま使用
-    //     Name = user.Name.ToString()  // UserNameをそのまま使用
-    // };
+//     // domainService を用いた重複チェックの実装
+//     bool result = await userService.Exists(user);
+//     if (result)
+//     {
+//         throw new Exception($"{user.Name}は重複しています。");
+//     }
 
-    // // Supabaseにデータを保存
-    // var response = await supabase.From<UserModel>().Insert(userModel);
-    // Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+//     // userRepository を用いらないユーザーの保存
+//     // データモデルへの変換
+//     var userModel = new UserModel
+//     {
+//         Id = user.Id.ToString(),  // UserIdをそのまま使用
+//         Name = user.Name.ToString()  // UserNameをそのまま使用
+//     };
 
-    // return Results.Ok(new
-    // {
-    //     message = "ユーザーの保存に成功しました",
-    //     user_id = user.Id.ToString(),
-    //     user_name = user.Name.ToString()
-    // });
-});
+//     // Supabaseにデータを保存
+//     var response = await supabase.From<UserModel>().Insert(userModel);
+//     Console.WriteLine($"インサート成功: {userModel.Id} - {userModel.Name}");
+
+//     return Results.Ok(new
+//     {
+//         message = "ユーザーの保存に成功しました",
+//         user_id = user.Id.ToString(),
+//         user_name = user.Name.ToString()
+//     });
+// });
 
 
 //引数にIUserRepositoryを渡す事で、UserRepositoryのインスタンスを注入する。
@@ -254,8 +255,8 @@ app.MapGet("/application/command", async (IUserRepository userRepository) =>
     return Results.Ok(new
     {
         message = "ユーザーの更新に成功しました",
-        user_id = updatedUserData.Id,
-        user_name = updatedUserData.Name
+        user_id = updatedUserData?.Id,
+        user_name = updatedUserData?.Name
     });
 });
 

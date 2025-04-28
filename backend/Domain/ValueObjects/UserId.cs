@@ -18,14 +18,14 @@ public class UserId : IEquatable<UserId>
         return Value;
     }
 
-    public bool Equals(UserId other)
+    public bool Equals(UserId? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return string.Equals(Value, other.Value);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;

@@ -54,12 +54,12 @@ public class UserApplicationService
             // throw new Exception("ユーザーが見つかりません。");
             return null;
         }
-        var newUser = User.CreateUser(name);
 
         // 名前の更新
         if (name != null)
         {
-            if (await _userService.Exists(newUser.Name))
+            var newName = new UserName(name);
+            if (await _userService.Exists(newName))
             {
                 throw new Exception("ユーザーが既に存在します。");
             }

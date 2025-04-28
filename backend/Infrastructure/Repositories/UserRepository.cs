@@ -22,7 +22,7 @@ public class UserRepository : IUserRepository
                 Name = user.Name.ToString()
             };
 
-            var result = await _supabase.From<UserModel>().Insert(model);
+            var result = await _supabase.From<UserModel>().Upsert(model);
             Console.WriteLine($"{user}の保存に成功しました。");
         }
         catch (Exception ex)

@@ -13,11 +13,11 @@ public class UserService
     }
 
     // ユーザー重複チェックのドメインサービス
-    public async Task<bool> Exists(User user)
+    public async Task<bool> Exists(UserName userName)
     {
         try
         {
-            var found = await _userRepository.Find(user.Name);
+            var found = await _userRepository.Find(userName);
             return found != null;
         }
         catch (Exception ex)

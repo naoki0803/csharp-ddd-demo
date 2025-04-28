@@ -1,4 +1,4 @@
-﻿namespace TodoApi;
+namespace TodoApi;
 
 public class UserApplicationService
 {
@@ -15,7 +15,7 @@ public class UserApplicationService
     {
         var user = User.CreateUser(name);
 
-        if (await _userService.Exists(user))
+        if (await _userService.Exists(user.Name))
         {
             throw new Exception("ユーザーが既に存在します。");
         }
@@ -59,7 +59,7 @@ public class UserApplicationService
         // 名前の更新
         if (name != null)
         {
-            if (await _userService.Exists(newUser))
+            if (await _userService.Exists(newUser.Name))
             {
                 throw new Exception("ユーザーが既に存在します。");
             }

@@ -157,7 +157,7 @@ app.MapGet("/repository", async (IUserRepository userRepository) =>
     var user = User.CreateUser("リポジトリ次郎");
 
     // domainService を用いた重複チェックの実装
-    var result = await userService.Exists(user);
+    var result = await userService.Exists(user.Name);
     if (result)
     {
         throw new Exception($"{user.Name}は重複しています。");

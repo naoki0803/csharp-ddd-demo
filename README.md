@@ -223,3 +223,79 @@ app.MapGet("/domainservice", () =>
 ```
 
 このように、ドメインサービスはドメインモデルの一部として、特定のエンティティに所属させるには不自然な操作をカプセル化します。ただし、可能な限りエンティティや値オブジェクトにビジネスロジックを配置し、ドメインサービスの使用は必要最小限に留めるべきです。
+
+## リポジトリ
+
+### リポジトリとは
+
+リポジトリは、ドメイン層とインフラ層の橋渡しを担うデザインパターンです。エンティティや値オブジェクトなどのドメインオブジェクトを、永続化（データベースへの保存や取得）するためのインターフェースを提供します。DDD においては、リポジトリを介してドメイン層がインフラ層の実装詳細に依存しないように設計します。
+
+-   ドメイン層ではリポジトリのインターフェース（例：`IUserRepository`）のみを参照し、具体的な実装（例：`UserRepository`）はインフラ層に隠蔽されます。
+-   これにより、テストや実装の差し替えが容易になり、ドメインロジックの純粋性が保たれます。
+
+### このプロジェクトでの実装例
+
+#### インターフェース定義（ドメイン層）
+
+```csharp
+// backend/Domain/Repositories/IUserRepository.cs
+public interface IUserRepository
+{
+    Task<User?> Find(UserName name);
+    Task<User?> Find(UserId id);
+    Task Save(User user);
+}
+```
+
+#### 実装クラス（インフラ層）
+
+```csharp
+// backend/Infrastructure/Repositories/UserRepository.cs
+public class UserRepository : IUserRepository
+{
+    private readonly Supabase.Client _supabase;
+    public UserRepository(Supabase.Client supabase) { ... }
+    public async Task Save(User user) { ... }
+    public async Task<User?> Find(UserName name) { ... }
+    public async Task<User?> Find(UserId id) { ... }
+}
+```
+
+#### DI 登録と利用（Program.cs）
+
+```csharp
+// backend/Program.cs
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+app.MapGet("/repository", async (IUserRepository userRepository) => {
+    var userService = new UserService(userRepository);
+    var user = User.CreateUser("リポジトリ次郎");
+    var result = await userService.Exists(user);
+    if (result) throw new Exception($"{user.Name}は重複しています。");
+    await userRepository.Save(user);
+    return Results.Ok(...);
+});
+```
+
+#### アプリケーションサービスでの利用
+
+```csharp
+// backend/Applications/Services/UserApplicationService.cs
+public class UserApplicationService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly UserService _userService;
+    public UserApplicationService(IUserRepository userRepository, UserService userService) { ... }
+    public async Task<UserData?> Register(string name) {
+        var user = User.CreateUser(name);
+        if (await _userService.Exists(user)) throw new Exception("ユーザーが既に存在します。");
+        await _userRepository.Save(user);
+        return new UserData(user);
+    }
+}
+```
+
+### まとめ
+
+-   リポジトリは「ドメインオブジェクトの永続化・取得」を担う役割であり、DDD のレイヤー分離を実現する重要なパターンです。
+-   このプロジェクトでは、インターフェースと実装を分離し、DI（依存性注入）を活用することで、柔軟かつテストしやすい設計となっています。

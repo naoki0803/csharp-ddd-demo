@@ -44,4 +44,24 @@ public class UserApplicationService
         var userData = new UserData(user);
         return userData;
     }
+
+    public async Task<UserData?> Update(string id, string name)
+    {
+        var targetId = new UserId(id);
+        var user = await _userRepository.Find(targetId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        user.ChangeName(name);
+        if (await _userService.Exists(user))
+        {
+            throw new Exception("ユーザーが既に存在します。");
+        }
+        await _userRepository.Save(user);
+
+        var userData = new UserData(user);
+        return userData;
+    }
 }

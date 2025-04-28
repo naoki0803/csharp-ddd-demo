@@ -1,4 +1,4 @@
-namespace TodoApi;
+﻿namespace TodoApi;
 
 public class UserApplicationService
 {
@@ -45,7 +45,7 @@ public class UserApplicationService
         return userData;
     }
 
-    public async Task<UserData?> Update(string id, string name = null, string email = null)
+    public async Task<UserData?> Update(string id, string? name = null, string? email = null)
     {
         var targetId = new UserId(id);
         var user = await _userRepository.Find(targetId);
@@ -67,6 +67,44 @@ public class UserApplicationService
         }
 
         // メールアドレスの更新 (今後もUpdateの引数が増えるたびに、内部の処理(シグネチャー)を変更する必要が出てきてしまう。)
+        if (email != null)
+        {
+            user.ChangeMailAddress(email);
+        }
+
+        await _userRepository.Save(user);
+
+        var userData = new UserData(user);
+        return userData;
+    }
+
+
+    public async Task<UserData?> Update(UserUpdateCommand command)
+    {
+        var targetId = new UserId(command.Id);
+        var user = await _userRepository.Find(targetId);
+        if (user == null)
+        {
+            // throw new Exception("ユーザーが見つかりません。");
+            return null;
+        }
+        // var newUser = User.CreateUser(command.name);
+        var name = command.Name;
+
+        // 名前の更新
+        if (name != null)
+        {
+            var newUserName = new UserName(name);
+            if (await _userService.Exists(newUserName))
+            {
+                throw new Exception("ユーザーが既に存在します。");
+            }
+            user.ChangeName(name);
+        }
+
+        // メールアドレスの更新 (今後もUpdateの引数が増えるたびに、内部の処理(シグネチャー)を変更する必要が出てきてしまう。)
+        // メールアドレスの更新 (command object を利用した場合)
+        var email = command.Email;
         if (email != null)
         {
             user.ChangeMailAddress(email);

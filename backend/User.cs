@@ -1,4 +1,4 @@
-﻿namespace TodoApi;
+namespace TodoApi;
 
 public class User : IEquatable<User>
 {
@@ -67,14 +67,14 @@ public class User : IEquatable<User>
         }
     }
 
-    public static bool operator ==(User left, User right)
+    public static bool operator ==(User? left, User? right)
     {
         if (ReferenceEquals(left, null))
             return ReferenceEquals(right, null);
         return left.Equals(right);
     }
 
-    public static bool operator !=(User left, User right)
+    public static bool operator !=(User? left, User? right)
     {
         return !(left == right);
     }

@@ -1,4 +1,4 @@
-namespace TodoApi;
+﻿namespace TodoApi;
 
 public class User : IEquatable<User>
 {
@@ -20,6 +20,15 @@ public class User : IEquatable<User>
         // user.Id = new UserId("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2"); // 重複チェックの為一時的にハードコーディング
         user.Name = new UserName(name);
 
+        return user;
+    }
+
+    // DBから取得したIDと名前を使ってUserインスタンスを「復元」するメソッド
+    public static User Reconstruct(string id, string name)
+    {
+        var user = new User();
+        user.Id = new UserId(id);
+        user.Name = new UserName(name);
         return user;
     }
 

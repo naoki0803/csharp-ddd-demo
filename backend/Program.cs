@@ -174,4 +174,32 @@ app.MapGet("/repository", async (IUserRepository userRepository) =>
     });
 });
 
+
+
+// アプリケーションサービスを用いたユーザーの保存
+app.MapGet("/application/register", async (IUserRepository userRepository) =>
+{
+    Console.WriteLine("application/registerのパスに接続されました。");
+
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+
+    var userData = await userApplicationService.Register("アプリケーション次郎");
+
+    if (userData == null)
+    {
+        return Results.BadRequest(new
+        {
+            message = "ユーザーの保存に失敗しました"
+        });
+    }
+    return Results.Ok(new
+    {
+        message = "ユーザーの保存に成功しました",
+        user_id = userData.Id,
+        user_name = userData.Name
+    });
+});
+
+
 app.Run();

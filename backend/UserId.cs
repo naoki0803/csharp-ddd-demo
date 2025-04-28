@@ -4,24 +4,25 @@
 /// </summary>
 public class UserId : IEquatable<UserId>
 {
-    private readonly string value;
+    // private readonly string value;
+    public string Value { get; }
 
     public UserId(string value)
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
-        this.value = value;
+        Value = value;
     }
 
     public override string ToString()
     {
-        return value;
+        return Value;
     }
 
     public bool Equals(UserId other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return string.Equals(value, other.value);
+        return string.Equals(Value, other.Value);
     }
 
     public override bool Equals(object obj)
@@ -34,7 +35,7 @@ public class UserId : IEquatable<UserId>
 
     public override int GetHashCode()
     {
-        return value.GetHashCode();
+        return Value.GetHashCode();
     }
 
     public static bool operator ==(UserId left, UserId right)

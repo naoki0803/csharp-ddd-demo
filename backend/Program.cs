@@ -201,5 +201,32 @@ app.MapGet("/application/register", async (IUserRepository userRepository) =>
     });
 });
 
+// アプリケーションサービスを用いたユーザーの検索
+app.MapGet("/application/get", async (IUserRepository userRepository) =>
+{
+    Console.WriteLine("application/getのパスに接続されました。");
+
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+
+    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
+
+    if (userData == null)
+    {
+        return Results.BadRequest(new
+        {
+            message = "該当するユーザーが見つかりませんでした"
+        });
+    }
+    return Results.Ok(new
+    {
+        message = "ユーザーの取得に成功しました",
+        user_id = userData.Id,
+        user_name = userData.Name
+    });
+});
+
+
+
 
 app.Run();

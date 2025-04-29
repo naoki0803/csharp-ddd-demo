@@ -67,6 +67,27 @@ public class UserRepository : IUserRepository
     {
         return await FindByField("id", id.ToString());
     }
+
+    public async Task Delete(User user)
+    {
+        try
+        {
+            await _supabase.From<UserModel>()
+                // .Where(x => x.Id == user.Id.ToString())
+                .Match(new Dictionary<string, string> { { "id", user.Id.ToString() } })
+                .Delete();
+
+            Console.WriteLine($"{user}の削除に成功しました。");
+        }
+        catch (Exception ex)
+        {
+            // ログ出力
+            Console.WriteLine($"ユーザー削除中にエラーが発生: {ex.Message}");
+            // カスタム例外に変換して再スロー
+            throw new Exception($"ユーザー {user} の削除に失敗しました", ex);
+        }
+    }
+
 }
 
 

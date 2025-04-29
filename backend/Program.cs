@@ -260,5 +260,33 @@ app.MapGet("/application/command", async (IUserRepository userRepository) =>
     });
 });
 
+// コマンドオブジェクトを用いたユーザーの更新
+app.MapGet("/application/delete", async (IUserRepository userRepository) =>
+{
+    Console.WriteLine("application/deleteのパスに接続されました。");
+
+    var userService = new UserService(userRepository);
+    var userApplicationService = new UserApplicationService(userRepository, userService);
+
+    var userData = await userApplicationService.Get("2a9db80f-df19-4dba-98ae-eb06b03cae7a");
+
+    if (userData == null)
+    {
+        return Results.BadRequest(new
+        {
+            message = "該当するユーザーが見つかりませんでした"
+        });
+    }
+
+    var command = new UserDeleteCommand(userData.Id);
+    var deletedUserData = await userApplicationService.Delete(command);
+
+    return Results.Ok(new
+    {
+        message = "ユーザーの削除に成功しました",
+        user_id = deletedUserData?.Id,
+        user_name = deletedUserData?.Name
+    });
+});
 
 app.Run();

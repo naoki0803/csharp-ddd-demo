@@ -266,9 +266,10 @@ app.MapGet("/application/delete", async (IUserRepository userRepository) =>
     Console.WriteLine("application/deleteのパスに接続されました。");
 
     var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userGetService = new UserGetService(userRepository);
+    var userDeleteService = new UserDeleteService(userRepository);
 
-    var userData = await userApplicationService.Get("2a9db80f-df19-4dba-98ae-eb06b03cae7a");
+    var userData = await userGetService.Handle(new UserGetCommand("2a9db80f-df19-4dba-98ae-eb06b03cae7a"));
 
     if (userData == null)
     {
@@ -279,7 +280,7 @@ app.MapGet("/application/delete", async (IUserRepository userRepository) =>
     }
 
     var command = new UserDeleteCommand(userData.Id);
-    var deletedUserData = await userApplicationService.Delete(command);
+    var deletedUserData = await userDeleteService.Handle(command);
 
     return Results.Ok(new
     {
@@ -288,5 +289,6 @@ app.MapGet("/application/delete", async (IUserRepository userRepository) =>
         user_name = deletedUserData?.Name
     });
 });
+
 
 app.Run();

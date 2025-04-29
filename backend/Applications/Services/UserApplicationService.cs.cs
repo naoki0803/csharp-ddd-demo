@@ -115,4 +115,18 @@ public class UserApplicationService
         var userData = new UserData(user);
         return userData;
     }
+
+    public async Task<UserData?> Delete(UserDeleteCommand command)
+    {
+        var targetId = new UserId(command.Id);
+        var user = await _userRepository.Find(targetId);
+        if (user == null)
+        {
+            throw new Exception("ユーザーが見つかりません。");
+        }
+
+        await _userRepository.Delete(user);
+
+        return new UserData(user);
+    }
 }

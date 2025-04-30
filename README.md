@@ -623,3 +623,180 @@ public async Task<UserData?> Handle(UserUpdateCommand command)
 -   コマンドパターンと DTO を活用し、入力データの管理と出力データの変換を適切に行う
 -   高凝集・低結合な設計により、保守性と拡張性を確保
 -   適切なエラーハンドリングとバリデーションにより、アプリケーションの堅牢性を担保
+
+## 依存関係の設計
+
+このプロジェクトでは、保守性と拡張性を高めるために、依存関係を慎重に設計しています。
+
+### アーキテクチャの依存方向
+
+プロジェクトは以下の層構造と依存方向を持ちます：
+
+UI/API 層 → アプリケーション層 → ドメイン層 ← インフラ層
+
+```mermaid
+graph TB
+    UI[UI/API層]
+    APP[アプリケーション層]
+    DOM[ドメイン層]
+    INF[インフラ層]
+
+    UI --> APP
+    APP --> DOM
+    INF --> DOM
+
+    style DOM fill:#f9f,stroke:#333,stroke-width:2px
+```
+
+この構造により、以下の利点が得られます：
+
+-   ドメイン層が外部の実装詳細から独立
+-   インフラ層の実装を自由に変更可能
+-   テストが容易（モックオブジェクトの利用）
+
+### 依存関係逆転の原則（DIP）
+
+このプロジェクトでは、依存関係逆転の原則を採用し、以下のように実装しています：
+
+1. **インターフェースの所有**
+
+```csharp
+// ドメイン層がインターフェースを所有
+namespace Domain.Repositories
+{
+    // ドメイン層で抽象（インターフェース）を定義
+    public interface IUserRepository
+    {
+        Task<User?> Find(UserId id);
+        Task Save(User user);
+    }
+}
+
+// インフラ層で実装を提供
+namespace Infrastructure.Repositories
+{
+    // インフラ層がドメイン層のインターフェースに依存
+    public class UserRepository : IUserRepository
+    {
+        private readonly Supabase.Client _supabase;
+
+        public async Task<User?> Find(UserId id)
+        {
+            // 具体的な実装の詳細
+        }
+    }
+}
+```
+
+2. **依存性注入（DI）の活用**
+
+```csharp
+// アプリケーション層：インターフェースに依存
+public class UserRegisterService
+{
+    private readonly IUserRepository _repository;
+    private readonly UserService _userService;
+
+    // コンストラクタインジェクション
+    public UserRegisterService(
+        IUserRepository repository,    // インターフェースとして依存を受け取る
+        UserService userService)
+    {
+        _repository = repository;
+        _userService = userService;
+    }
+}
+
+// Program.cs：依存関係の解決設定
+builder.Services.AddScoped<IUserRepository, UserRepository>();  // インターフェースと実装の紐付け
+builder.Services.AddScoped<UserRegisterService>();             // 具象クラスの登録
+```
+
+### ライフタイムスコープの管理
+
+依存関係のライフタイムは、その用途に応じて適切に管理されています：
+
+1. **Transient（都度生成）**
+
+    - 用途：ステートレスな処理を行うサービス
+    - 例：`IEmailService`、`ICalculationService`
+
+    ```csharp
+    builder.Services.AddTransient<ICalculationService>();
+    ```
+
+2. **Scoped（リクエストスコープ）**
+
+    - 用途：データアクセスやトランザクション管理
+    - 例：`IUserRepository`、`IDbContext`
+
+    ```csharp
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    ```
+
+3. **Singleton（アプリケーション全体）**
+    - 用途：共有リソースや設定情報
+    - 例：`IConfiguration`、`ICacheManager`
+    ```csharp
+    builder.Services.AddSingleton<IConfiguration>();
+    ```
+
+### 依存関係の実装パターン
+
+プロジェクトでは、以下のパターンを使用して依存関係を実装しています：
+
+1. **コンストラクタインジェクション**
+
+```csharp
+public class UserApplicationService
+{
+    private readonly IUserRepository _repository;
+    private readonly UserService _userService;
+
+    public UserApplicationService(
+        IUserRepository repository,
+        UserService userService)
+    {
+        _repository = repository;
+        _userService = userService;
+    }
+
+    public async Task<UserData> Register(string name)
+    {
+        var user = User.CreateUser(name);
+        await _repository.Save(user);
+        return new UserData(user);
+    }
+}
+```
+
+2. **インターフェースベースの依存**
+
+```csharp
+// API層での依存解決
+app.MapPost("/users", async (
+    UserRegisterCommand command,      // DTOとして入力を受け取る
+    UserRegisterService service) =>   // DIコンテナにより解決
+{
+    var result = await service.Handle(command);
+    return Results.Ok(result);
+});
+```
+
+### 依存関係管理のメリット
+
+このプロジェクトの依存関係設計により、以下の利点が得られています：
+
+1. **テスト容易性**
+
+    - インターフェースを通じたモックオブジェクトの利用
+    - 依存の分離による単体テストの実施
+
+2. **保守性**
+
+    - 実装の詳細を隠蔽
+    - 変更の影響範囲を局所化
+
+3. **拡張性**
+    - 新しい実装の追加が容易
+    - 既存コードへの影響を最小化

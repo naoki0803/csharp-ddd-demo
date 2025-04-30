@@ -9,58 +9,90 @@
 
 ### ドメインとは
 
-### ドメイン / ドメインモデル /ドメインオブジェクトの違い
+ドメインとは、ソフトウェアが対象とする業務領域のことです。DDD では、このドメインの知識をコードで表現することに重点を置きます。
 
-#### ドメイン
-
-ドメインはビジネスの問題領域そのもの
+このプロジェクトでは、以下のようなドメインのルールが存在します：
 
 -   ユーザーは一意の ID を持つ必要がある
 -   ユーザー名は 3 文字以上である必要がある
 -   削除済みのユーザーは再度削除できない
 
-#### ドメインモデル
+### ドメインモデル
 
-ドメインモデルはドメインの中でも、ビジネスの問題領域を表すもの
+ドメインをソフトウェアとして表現するための設計モデル。ドメインオブジェクト（ドメインの概念をコードとして実装したもの）によって構成されます。
+
+このプロジェクトのドメインモデルは以下の要素で構成されます：
+
+1. **エンティティ**
+
+    - ビジネスの実体を表現
+    - 一意の識別子を持ち、同一性で区別される
+    - 実装：User クラスなどのドメインオブジェクトとして実現
+
+2. **値オブジェクト**
+
+    - ビジネスの値の概念を表現
+    - 属性の値で区別される
+    - 実装：UserName, UserId クラスなどのドメインオブジェクトとして実現
+
+3. **ドメインサービス**
+
+    - 特定のエンティティに属さない操作を表現
+    - 複数のオブジェクト間の調整を行う
+    - 実装：UserService クラスなどのドメインオブジェクトとして実現
+
+4. **リポジトリ**
+    - エンティティの永続化を抽象化
+    - ドメインとインフラの橋渡しを行う
+    - 実装：IUserRepository インターフェースなどのドメインオブジェクトとして実現
+
+### 実装例
+
+以下は、このプロジェクトでのドメインモデルの実装例です：
 
 ```csharp
-// ドメインモデルの例：
-public class User  // ユーザーという概念
+// エンティティの実装例
+public class User  // エンティティとして実装
 {
-    public UserId Id { get; private set; }  // IDという概念
-    public UserName Name { get; private set; }  // 名前という概念
-    private bool isDeleted;  // 削除状態という概念
+    // 値オブジェクトとして実装
+    public UserId Id { get; private set; }     // 識別子
+    public UserName Name { get; private set; } // 属性
+    private bool isDeleted;                    // 状態
 
-    // ユーザー作成という操作の概念
+    // ファクトリメソッド - エンティティの生成ルール
     public static User CreateUser(string id, string name)
 
-    // 名前変更という操作の概念
+    // ドメインルール - エンティティ自身の振る舞い
     public void ChangeName(string name)
 
-    // 削除という操作の概念
+    // ドメインルール - エンティティの状態変更
     public void Delete()
 }
-```
 
-#### ドメインオブジェクト
-
-ドメインモデルを実際のコードとして実装したもの
-
-```csharp
-// 具体的な実装例：
-public void ChangeName(string name)
+// ドメインサービスの実装例
+public class UserService
 {
-    if (name == null) throw new ArgumentNullException(nameof(name));
-    if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。", nameof(name));
-    Name = new UserName(name);
+    // 複数のエンティティを跨ぐルール
+    public bool Exists(User user)
 }
 
-public void Delete()
+// リポジトリの実装例
+public interface IUserRepository
 {
-    if (isDeleted) throw new InvalidOperationException("既に削除済みのユーザーです。");
-    isDeleted = true;
+    // エンティティの永続化を抽象化
+    void Save(User user)
+    User Find(UserId id)
 }
 ```
+
+### 詳細な実装
+
+各ドメインオブジェクトの具体的な実装の詳細は、それぞれ以下のセクションで説明します：
+
+-   値オブジェクトの実装 → [値オブジェクト](#値オブジェクト)セクション
+-   エンティティの実装 → [エンティティ](#エンティティ)セクション
+-   ドメインサービスの実装 → [ドメインサービス](#ドメインサービス)セクション
+-   リポジトリの実装 → [リポジトリ](#リポジトリ)セクション
 
 ## 値オブジェクト
 

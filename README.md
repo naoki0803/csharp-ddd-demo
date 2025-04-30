@@ -306,79 +306,161 @@ public class UserApplicationService
 
 アプリケーションサービスは、ユースケース単位でアプリケーションの振る舞いをまとめる層です。ドメイン層のビジネスロジックを組み合わせて、外部（API や UI など）からの要求に応じた処理を実現します。DDD においては、アプリケーションサービスがドメインモデルの操作を調整し、トランザクション管理や DTO 変換なども担います。
 
--   ドメイン層のエンティティやドメインサービスを利用して、ユースケース（例：ユーザー登録、取得など）を実装します。
--   アプリケーションサービス自体にはビジネスロジックを極力持たず、主に「調整役」として振る舞います。
--   外部インターフェース（API コントローラー等）から直接呼び出されることが多いです。
+### アプリケーションサービスの責務
 
-### このプロジェクトでの実装例
+1. **ドメインロジックの調整**
 
-#### サービス定義
+    - ドメイン層のエンティティやドメインサービスを利用してユースケースを実装
+    - ビジネスロジックは極力持たず、「調整役」として振る舞う
+    - 外部インターフェース（API コントローラー等）から直接呼び出される
+
+2. **コマンドパターンの活用**
+
+    - 入力データのカプセル化
+    - バリデーションの一元管理
+    - 将来的な拡張性の確保
+
+3. **DTO によるデータ変換**
+    - ドメインオブジェクトの内部構造を外部に漏らさない
+    - API レスポンスの形式を統一
+    - ドメインモデルの変更の影響を局所化
+
+### 実装例
+
+#### コマンドクラス
 
 ```csharp
-// backend/Applications/Services/UserApplicationService.cs
-public class UserApplicationService
+// backend/Applications/Users/Commands/UserUpdateCommand.cs
+public class UserUpdateCommand
+{
+    public UserUpdateCommand(string id)
+    {
+        Id = id;
+    }
+    public string Id { get; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+}
+```
+
+#### DTO クラス
+
+```csharp
+// backend/Applications/Users/DTOs/UserData.cs
+public class UserData(User source)
+{
+    public string Id { get; } = source.Id.Value;
+    public string Name { get; } = source.Name.Value;
+}
+```
+
+#### サービスクラス
+
+```csharp
+// backend/Applications/Users/Services/UserUpdateService.cs
+public class UserUpdateService
 {
     private readonly IUserRepository _userRepository;
     private readonly UserService _userService;
-    public UserApplicationService(IUserRepository userRepository, UserService userService)
+
+    public UserUpdateService(IUserRepository userRepository, UserService userService)
     {
         _userRepository = userRepository;
         _userService = userService;
     }
 
-    // ユーザー登録ユースケース
-    public async Task<UserData?> Register(string name)
+    public async Task<UserData?> Handle(UserUpdateCommand command)
     {
-        var user = User.CreateUser(name);
-        if (await _userService.Exists(user))
-            throw new Exception("ユーザーが既に存在します。");
-        await _userRepository.Save(user);
-        return new UserData(user);
-    }
-    public async Task<UserData?> Get(string id)
-    {
-        var targetId = new UserId(id);
+        var targetId = new UserId(command.Id);
         var user = await _userRepository.Find(targetId);
-        if (user == null) return null;
-        return new UserData(user);
+        if (user == null)
+        {
+            return null;
+        }
+        var name = command.Name;
+
+        if (name != null)
+        {
+            var newUserName = new UserName(name);
+            if (await _userService.Exists(newUserName))
+            {
+                throw new Exception("ユーザーが既に存在します。");
+            }
+            user.ChangeName(name);
+        }
+
+        await _userRepository.Save(user);
+
+        var userData = new UserData(user);
+        return userData;
     }
 }
 ```
 
--   `IUserRepository`や`UserService`はコンストラクタインジェクションで渡され、テスト容易性・疎結合を実現しています。
--   ドメイン層の知識（エンティティ生成(User.CreateUser)、ビジネスルール判定(\_userService.Exists)）はアプリケーションサービスから呼び出され、
-    アプリケーションサービス自体は「調整役」に徹しています。
--   DTO 変換により、ドメインオブジェクトの内部構造を外部に漏らさない設計です。
+### パッケージ構成
 
-#### 利用例（Program.cs）
+アプリケーションサービスは以下のような構成で実装されています：
 
-```csharp
-// backend/Program.cs
-app.MapGet("/application/register", async (IUserRepository userRepository) =>
-{
-    var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
-    var userData = await userApplicationService.Register("アプリケーション次郎");
-    if (userData == null)
-        return Results.BadRequest(new { message = "ユーザーの保存に失敗しました" });
-    return Results.Ok(new { message = "ユーザーの保存に成功しました", user_id = userData.Id, user_name = userData.Name });
-});
-
-app.MapGet("/application/get", async (IUserRepository userRepository) =>
-{
-    var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
-    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
-    if (userData == null)
-        return Results.BadRequest(new { message = "該当するユーザーが見つかりませんでした" });
-    return Results.Ok(new { message = "ユーザーの取得に成功しました", user_id = userData.Id, user_name = userData.Name });
-});
+```
+Applications/
+  └── Users/
+      ├── Commands/      # コマンドクラス
+      │   ├── UserUpdateCommand.cs
+      │   ├── UserRegisterCommand.cs
+      │   └── UserDeleteCommand.cs
+      ├── Services/      # アプリケーションサービス
+      │   ├── UserUpdateService.cs
+      │   ├── UserRegisterService.cs
+      │   └── UserDeleteService.cs
+      └── DTOs/         # データ転送オブジェクト
+          └── UserData.cs
 ```
 
--   API 層（エンドポイント）はアプリケーションサービスのみを呼び出し、ドメイン層やインフラ層の詳細には依存しません。
--   ユースケースごとにアプリケーションサービスのメソッドを呼び出し、結果を DTO として返却することで、責務分離と拡張性を担保しています。
+### 凝集度と結合度の最適化
+
+#### 高凝集の実現
+
+-   ユースケース単位でのサービスクラスの分割
+    -   `UserRegisterService`: ユーザー登録処理
+    -   `UserUpdateService`: ユーザー更新処理
+    -   `UserDeleteService`: ユーザー削除処理
+-   単一責任の原則に基づく実装
+
+#### 低結合の実現
+
+-   インターフェースと依存性注入の活用
+-   DTO によるドメインモデルの隠蔽
+-   コマンドパターンによる入力データの分離
+
+### エラーハンドリングとバリデーション
+
+```csharp
+public async Task<UserData?> Handle(UserUpdateCommand command)
+{
+    // null チェックによる早期リターン
+    var user = await _userRepository.Find(new UserId(command.Id));
+    if (user == null) return null;
+
+    // ドメインルールの検証
+    if (command.Name != null)
+    {
+        var newUserName = new UserName(command.Name);
+        if (await _userService.Exists(newUserName))
+        {
+            throw new Exception("ユーザーが既に存在します。");
+        }
+        user.ChangeName(command.Name);
+    }
+
+    // 永続化と戻り値の変換
+    await _userRepository.Save(user);
+    return new UserData(user);
+}
+```
 
 ### まとめ
 
--   アプリケーションサービスは「ユースケースの調整役」として、ドメイン層のロジックを組み合わせて外部要求に応じた処理を実現します。
--   このプロジェクトでは、リポジトリやドメインサービスを注入し、DTO 変換や例外処理も担うことで、API 層との橋渡しを担っています。
+-   アプリケーションサービスは「ユースケースの調整役」として、ドメイン層のロジックを組み合わせて外部要求に応える
+-   コマンドパターンと DTO を活用し、入力データの管理と出力データの変換を適切に行う
+-   高凝集・低結合な設計により、保守性と拡張性を確保
+-   適切なエラーハンドリングとバリデーションにより、アプリケーションの堅牢性を担保

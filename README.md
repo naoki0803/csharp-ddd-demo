@@ -141,19 +141,146 @@ public class UserName : IEquatable<UserName>
 
 ### エンティティとは
 
+エンティティは、ビジネスドメインにおける実体（実在するもの）を表現するオブジェクトです。以下の特徴を持ちます：
+
+-   一意の識別子（ID）を持つ
+-   ライフサイクルを通じて同一性が保持される
+-   属性が変更されても同じエンティティとして識別される
+-   ビジネスルールをカプセル化する
+
 ### 値オブジェクトとエンティティの違い
 
--   エンティティ: 同一性によって識別される
--   値オブジェクト: 等価性によって識別される
+-   エンティティ: 同一性（ID）によって識別される
+-   値オブジェクト: 属性の等価性によって識別される
 
-> 人は誕生日(属性)が変わっても**同一人物**として識別される == 同一性が担保されている == エンティティ
-> 名前は苗字が変わると**別名**として識別される == 同一性が担保されていない == 値オブジェクト
+例：
 
-### エンティティの性質
+-   ユーザー（エンティティ）: ID が同じなら、名前が変わっても同一のユーザー
+-   メールアドレス（値オブジェクト）: 文字列が変われば、異なるメールアドレスとして扱う
 
--   可変である
--   同じ属性であっても区別される
--   同一性によって区別される
+### エンティティの実装例
+
+```csharp
+// backend/Domain/Entities/User.cs
+public class User : IEquatable<User>
+{
+    public UserId Id { get; private set; } = null!;
+    public UserName Name { get; private set; } = null!;
+
+    // コンストラクタをprivateにして、直接のインスタンス生成を禁止
+    private User() { }
+
+    // ファクトリメソッドによるインスタンス生成
+    public static User CreateUser(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        var user = new User();
+        user.Id = new UserId(Guid.NewGuid().ToString());
+        user.Name = new UserName(name);
+        return user;
+    }
+
+    // DBからの再構築用ファクトリメソッド
+    public static User Reconstruct(string id, string name)
+    {
+        var user = new User();
+        user.Id = new UserId(id);
+        user.Name = new UserName(name);
+        return user;
+    }
+
+    // ビジネスルールを含むメソッド
+    public void ChangeName(string name)
+    {
+        if (name == null) throw new ArgumentNullException(nameof(name));
+        if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。", nameof(name));
+        Name = new UserName(name);
+    }
+
+    // 同一性の実装
+    public bool Equals(User? other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id.Equals(other.Id);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((User)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
+}
+```
+
+### エンティティの設計原則
+
+1. **カプセル化の徹底**
+
+    - プロパティは`private set`で保護
+    - 状態変更は明示的なメソッドを通じて行う
+    - 不変条件はコンストラクタとメソッドで保証
+
+2. **ファクトリメソッドパターンの活用**
+
+    ```csharp
+    // 新規作成用のファクトリメソッド
+    public static User CreateUser(string name)
+
+    // 永続化データからの再構築用ファクトリメソッド
+    public static User Reconstruct(string id, string name)
+    ```
+
+3. **値オブジェクトの活用**
+
+    ```csharp
+    public UserId Id { get; private set; }    // プリミティブ型ではなく値オブジェクトを使用
+    public UserName Name { get; private set; } // 名前も値オブジェクトとして実装
+    ```
+
+4. **ドメインルールの実装**
+
+    ```csharp
+    public void ChangeName(string name)
+    {
+        if (name == null) throw new ArgumentNullException(nameof(name));
+        if (name.Length < 3) throw new ArgumentException("ユーザー名は3文字以上です。");
+        Name = new UserName(name);
+    }
+    ```
+
+5. **同一性の実装**
+    - `IEquatable<T>`インターフェースの実装
+    - ID に基づく等価性の判定
+    - `GetHashCode()`のオーバーライド
+
+### エンティティの責務範囲
+
+1. **含めるべき要素**
+
+    - エンティティの属性（プロパティ）
+    - ビジネスルール（バリデーション）
+    - 状態変更のロジック
+    - 同一性の実装
+
+2. **含めるべきでない要素**
+    - 他のエンティティとの相互作用（→ ドメインサービスの責務）
+    - インフラストラクチャの関心事（→ リポジトリの責務）
+    - ユースケース固有のロジック（→ アプリケーションサービスの責務）
+
+### まとめ
+
+-   エンティティは、ビジネスドメインの中核となる概念を表現する
+-   同一性による識別と状態の可変性が特徴
+-   適切なカプセル化とドメインルールの実装により、ドメインの整合性を保証
+-   値オブジェクトと組み合わせることで、より表現力の高いドメインモデルを実現
 
 ## ドメインサービス
 

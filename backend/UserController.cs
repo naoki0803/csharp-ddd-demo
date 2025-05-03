@@ -16,7 +16,7 @@ public class UserController : ControllerBase
     public void Post([FromBody] UserPostRequestModel request)
     {
         var command = new UserRegisterCommand(request.Name);
-        _userApplicationService.Register(command);
+        _userApplicationService.Register(command.Name);
     }
 
 }

@@ -34,6 +34,13 @@ public class UserRepository : IUserRepository
         }
     }
 
+    // 全件取得
+    public async Task<List<User>?> FindAll()
+    {
+        var result = await _supabase.From<UserModel>().Get();
+        return result.Models.Select(x => User.Reconstruct(x.Id, x.Name)).ToList();
+    }
+
     // フィールド名と値を指定してユーザーを検索するメソッド
     private async Task<User?> FindByField(string fieldName, string value)
     {

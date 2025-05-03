@@ -6,4 +6,5 @@ public interface IUserRepository
     Task<User?> Find(UserId id);
     Task Save(User user);
     Task Delete(User user);
+    Task<List<User>> FindAll();
 }

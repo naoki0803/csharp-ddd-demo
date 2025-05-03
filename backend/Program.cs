@@ -290,5 +290,19 @@ app.MapGet("/application/delete", async (IUserRepository userRepository) =>
     });
 });
 
+// デバッグ用のユーザー一覧取得
+app.MapGet("/debug/users", async (IUserRepository userRepository) =>
+{
+    var userGetAllService = new UserGetAllService(userRepository);
+    var result = await userGetAllService.Handle();
+    var users = result.Select(user => new UserIndexResponseModel(user.Id, user.Name)).ToList();
+
+    foreach (var user in users)
+    {
+        Console.WriteLine($"Id: {user.Id}, Name: {user.Name}");
+    }
+
+    return users;
+});
 
 app.Run();

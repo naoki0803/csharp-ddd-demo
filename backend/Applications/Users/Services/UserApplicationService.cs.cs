@@ -1,4 +1,4 @@
-﻿namespace TodoApi;
+namespace TodoApi;
 
 public class UserApplicationService
 {
@@ -11,9 +11,9 @@ public class UserApplicationService
         _userService = userService;
     }
 
-    public async Task<UserData?> Register(string name)
+    public async Task<UserData?> Register(UserRegisterCommand command)
     {
-        var user = User.CreateUser(name);
+        var user = User.CreateUser(command.Name);
 
         if (await _userService.Exists(user.Name))
         {
@@ -26,9 +26,9 @@ public class UserApplicationService
         return userData;
     }
 
-    public async Task<UserData?> Get(string id)
+    public async Task<UserData?> Get(UserGetCommand command)
     {
-        var targetId = new UserId(id);
+        var targetId = new UserId(command.Id);
         var user = await _userRepository.Find(targetId);
         if (user == null)
         {

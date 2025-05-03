@@ -183,9 +183,9 @@ app.MapGet("/application/register", async (IUserRepository userRepository) =>
     Console.WriteLine("application/registerのパスに接続されました。");
 
     var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userRegisterService = new UserRegisterService(userRepository, userService);
 
-    var userData = await userApplicationService.Register("アプリケーション次郎");
+    var userData = await userRegisterService.Handle(new UserRegisterCommand("アプリケーション次郎"));
 
     if (userData == null)
     {
@@ -208,9 +208,9 @@ app.MapGet("/application/get", async (IUserRepository userRepository) =>
     Console.WriteLine("application/getのパスに接続されました。");
 
     var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userGetService = new UserGetService(userRepository);
 
-    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
+    var userData = await userGetService.Handle(new UserGetCommand("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2"));
 
     if (userData == null)
     {
@@ -233,9 +233,9 @@ app.MapGet("/application/command", async (IUserRepository userRepository) =>
     Console.WriteLine("application/commandのパスに接続されました。");
 
     var userService = new UserService(userRepository);
-    var userApplicationService = new UserApplicationService(userRepository, userService);
+    var userUpdateService = new UserUpdateService(userRepository, userService);
 
-    var userData = await userApplicationService.Get("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2");
+    var userData = await userUpdateService.Handle(new UserUpdateCommand("c0d3fd05-1bea-4d69-8689-ac5a4209f7b2"));
 
     if (userData == null)
     {
@@ -250,7 +250,7 @@ app.MapGet("/application/command", async (IUserRepository userRepository) =>
         Name = "コマンドオブジェクト次郎アップサート3",
         Email = "command3@example.com"
     };
-    var updatedUserData = await userApplicationService.Update(command);
+    var updatedUserData = await userUpdateService.Handle(command);
 
     return Results.Ok(new
     {

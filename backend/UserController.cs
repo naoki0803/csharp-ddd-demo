@@ -39,4 +39,14 @@ public class UserController : ControllerBase
         var users = result.Select(user => new UserIndexResponseModel(user.Id, user.Name)).ToList();
         return users;
     }
+
+    [HttpGet("Id")]
+    public async Task<UserGetResponseModel> Get(string id)
+    {
+        var command = new UserGetCommand(id);
+        var userData = await _getService.Handle(command);
+
+        var response = new UserGetResponseModel(userData.Id, userData.Name);
+        return response;
+    }
 }

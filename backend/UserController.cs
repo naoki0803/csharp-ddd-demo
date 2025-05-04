@@ -26,10 +26,10 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public void Post([FromBody] UserPostRequestModel request)
+    public async void Post([FromBody] UserPostRequestModel request)
     {
         var command = new UserRegisterCommand(request.Name);
-        _registerService.Handle(command);
+        await _registerService.Handle(command);
     }
 
     [HttpGet]
@@ -48,5 +48,13 @@ public class UserController : ControllerBase
 
         var response = new UserGetResponseModel(userData.Id, userData.Name);
         return response;
+    }
+
+    [HttpPatch("Id")]
+    public async void Patch([FromBody] UserPatchRequestModel request)
+    {
+        var command = new UserUpdateCommand(request.Id);
+        command.Name = request.Name;
+        await _updateService.Handle(command);
     }
 }

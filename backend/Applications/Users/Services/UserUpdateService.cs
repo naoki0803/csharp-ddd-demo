@@ -20,6 +20,7 @@ public class UserUpdateService
             return null;
         }
         var name = command.Name;
+        var mail = command.Email;
 
         if (name != null)
         {
@@ -29,6 +30,10 @@ public class UserUpdateService
                 throw new Exception("ユーザーが既に存在します。");
             }
             user.ChangeName(name);
+        }
+        if (mail != null)
+        {
+            user.ChangeMailAddress(mail);
         }
 
         await _userRepository.Save(user);

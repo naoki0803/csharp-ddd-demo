@@ -55,6 +55,7 @@ public class UserController : ControllerBase
     {
         var command = new UserUpdateCommand(request.Id);
         command.Name = request.Name;
+        command.Email = request.Email;
         await _updateService.Handle(command);
     }
 }
